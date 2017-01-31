@@ -59,9 +59,9 @@ is probably thread safe.
 
 **What is the speedup?**
 
-It depends :) If you have more than one heave template tag in a template then
+It depends :) If you have more than one heavy template tag in a template then
 the speedup is large, else it may even make things slower. Don't decorate
-lightweight template tags with multiprocess.
+lightweight template tags nodes with multiprocess.
 
 **Will it help on a busy site?**
 
