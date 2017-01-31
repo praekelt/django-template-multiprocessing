@@ -15,6 +15,10 @@ setup(
     install_requires = [
         "django>=1.9",
     ],
+    tests_require = [
+        "tox"
+    ],
+    include_package_data=True,
     classifiers=[
         "Programming Language :: Python",
         "License :: OSI Approved :: BSD License",

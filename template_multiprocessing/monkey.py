@@ -4,6 +4,7 @@ import multiprocessing
 import time
 
 from django.db import connection
+from django.template.base import logger, Node, NodeList
 from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
 
@@ -40,7 +41,8 @@ def NodeList_render(self, context):
     # Queue that keeps track of how many cores are in use
     cores = multiprocessing.Queue(CPU_COUNT)
 
-    # Everything must go into a queue
+    # Everything must go into a queue. Queue completion order is not fixed so
+    # incorporate the index.
     for index, node in enumerate(self):
         if isinstance(node, Node):
             if getattr(node, "__multiprocess_safe__", False):
@@ -69,6 +71,7 @@ def NodeList_render(self, context):
                 cores.put(1)
                 p.daemon = True
                 p.start()
+
         time.sleep(0.05)
 
     # Let the jobs complete
@@ -82,15 +85,21 @@ def NodeList_render(self, context):
         bits[tu[0]] = force_text(tu[1])
     return mark_safe("".join(bits))
 
-    def render_annotated_multi(self, node, context, index, queue, cores):
-        # Multiprocess does a deepcopy of the process and this includes the
-        # database connection. This causes issues because DB connection info is
-        # recorded in thread locals. Close the DB connection - Django will
-        # automatically re-establish it.
-        connection.close()
 
-        # Do the actual rendering
-        queue.put((index, node.render_annotated(context)))
+def NodeList_render_annotated_multi(self, node, context, index, queue, cores):
+    # Multiprocess does a deepcopy of the process and this includes the
+    # database connection. This causes issues because DB connection info is
+    # recorded in thread locals. Close the DB connection - Django will
+    # automatically re-establish it.
+    connection.close()
 
-        # Signal a core is now available
-        cores.get()
+    # Do the actual rendering
+    queue.put((index, node.render_annotated(context)))
+
+    # Signal a core is now available
+    cores.get()
+
+
+logger.info("template_multiprocessing patching django.template.base.NodeList")
+NodeList.render = NodeList_render
+NodeList.render_annotated_multi = NodeList_render_annotated_multi
