@@ -55,7 +55,9 @@ Frequently asked questions
 **How do I know if my template tag is thread safe?**
 
 If you push the context in the render method before modifying it then your tag
-is probably thread safe.
+is probably thread safe. If your tag sets anything on context or the request,
+and these values are interpreted by any other tag that is *not* contained
+within your tag, then your tag is not thread-safe.
 
 **What is the speedup?**
 
