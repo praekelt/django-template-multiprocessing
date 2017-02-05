@@ -55,9 +55,9 @@ def NodeList_render(self, context):
                 jobs.append(p)
             else:
                 result = node.render_annotated(context)
-                queue.put((index, result, context.get("request")))
+                queue.put((index, result))
         else:
-            queue.put((index, node, context.get("request")))
+            queue.put((index, node))
 
     # Ensure we never run more than CPU_COUNT jobs on other cores.
     # Unfortunately multiprocessing.Pool doesn't work when used in classes so
@@ -98,7 +98,7 @@ def NodeList_render_annotated_multi(self, node, context, index, queue, cores):
 
     # Do the actual rendering
     result = node.render_annotated(context)
-    queue.put((index, result, context.get("request")))
+    queue.put((index, result))
 
     # Signal a core is now available
     cores.get()
