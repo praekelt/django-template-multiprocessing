@@ -14,12 +14,14 @@ CPU_COUNT = multiprocessing.cpu_count()
 
 def NodeList_render(self, context):
 
-    # First pass to see if multiprocessing is required for this nodelist
+    # First pass to see if multiprocessing is required for this nodelist. If
+    # current process is already a daemon we can't use multiprocessing.
     has_multi = False
-    for node in self:
-        if getattr(node, "__multiprocess_safe__", False):
-            has_multi = True
-            break
+    if not multiprocessing.process.current_process()._daemonic:
+        for node in self:
+            if getattr(node, "__multiprocess_safe__", False):
+                has_multi = True
+                break
 
     # Original code is not multiprocessing required
     if not has_multi:
@@ -52,9 +54,10 @@ def NodeList_render(self, context):
                 )
                 jobs.append(p)
             else:
-                queue.put((index, node.render_annotated(context)))
+                result = node.render_annotated(context)
+                queue.put((index, result, context.get("request")))
         else:
-            queue.put((index, node))
+            queue.put((index, node, context.get("request")))
 
     # Ensure we never run more than CPU_COUNT jobs on other cores.
     # Unfortunately multiprocessing.Pool doesn't work when used in classes so
@@ -94,7 +97,8 @@ def NodeList_render_annotated_multi(self, node, context, index, queue, cores):
     connection.close()
 
     # Do the actual rendering
-    queue.put((index, node.render_annotated(context)))
+    result = node.render_annotated(context)
+    queue.put((index, result, context.get("request")))
 
     # Signal a core is now available
     cores.get()
