@@ -1,7 +1,7 @@
-def multiprocess(klass):
-    """
-    A decorator that defines the __html__ method. This helps non-Django
-    templates to detect classes whose __str__ methods return SafeText.
-    """
-    setattr(klass, '__multiprocess_safe__', True)
-    return klass
+def multiprocess(after_render=None, callback=None):
+    def inner(klass):
+        setattr(klass, "__multiprocess_safe__", True)
+        setattr(klass, "__multiprocess_after_render", after_render)
+        setattr(klass, "__multiprocess_callback", callback)
+        return klass
+    return inner

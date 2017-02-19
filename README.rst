@@ -49,6 +49,20 @@ Mark your template tag node as multiprocess safe by using a decorator::
                 context["must_not_persist"] = 1
                 return "a_tag"
 
+You may pass an optional callback parameter. These callbacks fire in the normal
+single-threaded sequential order after all sub-processes have completed. This
+is particularly useful if you set keys on the request because each sub-process
+gets a *copy* of the original request::
+
+    def callback(request, process_request, last=False, **kwargs):
+        request._some_list.extend(process_request._some_list)
+
+    @multiprocess(callback="module.templatetags.my_tags.callback")
+    class ATagNode(template.Node):
+
+        def render(self, context):
+            ...
+
 Frequently asked questions
 --------------------------
 
@@ -58,6 +72,17 @@ If you push the context in the render method before modifying it then your tag
 is probably thread safe. If your tag sets anything on context or the request,
 and these values are interpreted by any other tag that is *not* contained
 within your tag, then your tag is not thread-safe.
+
+**Can my template tag look for or drop keys in the request?**
+
+The request object in a sub-process is a *copy* of the original request. That
+means anything you set in the request does not automatically end up back in
+the original request. At this point the concept of relying on an execution order
+does not event exist.
+
+However, after sub-processes are spawned and completed a series of callbacks
+fire in the original non-threaded execution order. This may provide sufficient
+opportunity to rewrite a temlate tag in a thread safe manner.
 
 **What is the speedup?**
 
