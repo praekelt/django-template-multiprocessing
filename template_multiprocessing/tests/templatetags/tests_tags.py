@@ -11,7 +11,7 @@ def a_tag(parser, token):
     return ATagNode()
 
 
-@multiprocess
+@multiprocess()
 class ATagNode(template.Node):
 
     def render(self, context):
