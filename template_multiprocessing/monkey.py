@@ -1,12 +1,13 @@
 from __future__ import unicode_literals
 
 import copy
+import logging
 import multiprocessing
 import time
 from importlib import import_module
 
 from django.db import connection
-from django.template.base import logger, Node, NodeList
+from django.template.base import Node, NodeList
 from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
 
@@ -14,6 +15,7 @@ from template_multiprocessing.utils import Process
 
 
 CPU_COUNT = multiprocessing.cpu_count()
+logger = logging.getLogger("django.template")
 
 
 def NodeList_render(self, context):
