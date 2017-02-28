@@ -24,10 +24,20 @@ def NodeList_render(self, context):
     if not multiprocessing.process.current_process()._daemonic:
         for node in self:
             if getattr(node, "__multiprocess_safe__", False):
+                # Check predicate if any
+                predicate = getattr(
+                    node.__class__,
+                    "__multiprocess_predicate__",
+                    None
+                )
+                if predicate is not None:
+                    if not predicate(node, context):
+                        has_multi = False
+                        break
                 has_multi = True
                 break
 
-    # Original code is not multiprocessing required
+    # Original code if no multiprocessing required
     if not has_multi:
         bits = []
         for node in self:
