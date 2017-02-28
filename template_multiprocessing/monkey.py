@@ -6,6 +6,7 @@ import multiprocessing
 import time
 from importlib import import_module
 
+from django.conf import settings
 from django.db import connection
 from django.template.base import logger, Node, NodeList
 from django.utils.encoding import force_text
@@ -19,10 +20,16 @@ CPU_COUNT = multiprocessing.cpu_count()
 
 def NodeList_render(self, context):
 
+    # Check that multiprocessing is enabled
+    try:
+        enabled = settings.TEMPLATE_MULTIPROCESSING["enabled"]
+    except (AttributeError, KeyError):
+        enabled = False
+
     # First pass to see if multiprocessing is required for this nodelist. If
     # current process is already a daemon we can't use multiprocessing.
     has_multi = False
-    if not multiprocessing.process.current_process()._daemonic:
+    if enabled and not multiprocessing.process.current_process()._daemonic:
         for node in self:
             if getattr(node, "__multiprocess_safe__", False):
                 # Check predicate if any
@@ -139,7 +146,11 @@ def NodeList_render_annotated_multi(self, node, context, index, queue, cores):
         # automatically re-establish it.
         connection.close()
 
-        # Do the actual rendering
+        # Mark the context. It's safe to do so because it is a copy of the
+        # original context.
+        context["__multiprocess_in_progress__"] = True
+
+        # Do the actual rendering.
         result = node.render_annotated(context)
 
     finally:
