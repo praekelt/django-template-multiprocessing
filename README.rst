@@ -16,6 +16,8 @@ Installation
 
 #. Add ``template_multiprocessing`` to your ``INSTALLED_APPS`` setting.
 
+#. Set ``TEMPLATE_MULTIPROCESSING = {"enabled": True}`` in settings.
+
 Overview
 --------
 
@@ -62,6 +64,8 @@ gets a *copy* of the original request::
 
         def render(self, context):
             ...
+
+todo: predicate, after_render docs
 
 Frequently asked questions
 --------------------------
