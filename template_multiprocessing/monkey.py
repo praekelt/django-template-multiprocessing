@@ -74,9 +74,15 @@ def NodeList_render(self, context):
     for index, node in enumerate(self):
         if isinstance(node, Node):
             if getattr(node, "__multiprocess_safe__", False):
+                new_context = copy.deepcopy(context)
+                # _current_app is compared to a module level object variable in
+                # template/context.py. Upon copy it must thus be restored to be
+                # the same as the original current_app else the comparison
+                # fails.
+                new_context._current_app = context._current_app
                 p = Process(
                     target=self.render_annotated_multi,
-                    args=(node, copy.deepcopy(context), index, queue, cores)
+                    args=(node, new_context, index, queue, cores)
                 )
                 jobs.append(p)
                 expected_queue_size += 1
